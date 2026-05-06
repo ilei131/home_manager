@@ -4,52 +4,53 @@ import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import HomePage from './pages/HomePage';
 import DashboardPage from './pages/DashboardPage';
 import CategoriesPage from './pages/CategoriesPage';
 import LocationsPage from './pages/LocationsPage';
 import StatsPage from './pages/StatsPage';
 
 function AppRoutes() {
-  const { user, loading } = useAuth();
+    const { user, loading } = useAuth();
 
-  if (loading) {
+    if (loading) {
+        return (
+            <div className="loading" style={{ minHeight: '100vh' }}>
+                <div className="spinner" />
+            </div>
+        );
+    }
+
     return (
-      <div className="loading" style={{ minHeight: '100vh' }}>
-        <div className="spinner" />
-      </div>
+        <Routes>
+            <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
+            <Route path="/register" element={user ? <Navigate to="/dashboard" replace /> : <RegisterPage />} />
+            <Route
+                path="/"
+                element={
+                    <ProtectedRoute>
+                        <Layout />
+                    </ProtectedRoute>
+                }
+            >
+                <Route index element={<HomePage />} />
+                <Route path="dashboard" element={<DashboardPage />} />
+                <Route path="categories" element={<CategoriesPage />} />
+                <Route path="locations" element={<LocationsPage />} />
+                <Route
+                    path="stats"
+                    element={
+                        <ProtectedRoute requireAdmin>
+                            <StatsPage />
+                        </ProtectedRoute>
+                    }
+                />
+            </Route>
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
     );
-  }
-
-  return (
-    <Routes>
-      <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
-      <Route path="/register" element={user ? <Navigate to="/dashboard" replace /> : <RegisterPage />} />
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <Layout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="categories" element={<CategoriesPage />} />
-        <Route path="locations" element={<LocationsPage />} />
-        <Route
-          path="stats"
-          element={
-            <ProtectedRoute requireAdmin>
-              <StatsPage />
-            </ProtectedRoute>
-          }
-        />
-      </Route>
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
-  );
 }
 
 export default function App() {
-  return <AppRoutes />;
+    return <AppRoutes />;
 }

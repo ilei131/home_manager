@@ -24,3 +24,8 @@ export async function updateItem(id: string, data: CreateItemRequest): Promise<I
 export async function deleteItem(id: string): Promise<void> {
   await api.delete(`/items/${id}`);
 }
+
+export async function getExpiringItems(): Promise<Item[]> {
+  const res = await api.get<Item[]>('/items/expiring');
+  return res.data;
+}

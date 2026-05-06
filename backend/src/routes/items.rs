@@ -18,6 +18,7 @@ pub struct ItemsState {
 pub fn items_routes(state: ItemsState) -> Router {
     Router::new()
         .route("/api/items", post(create_item).get(list_items))
+        .route("/api/items/expiring", get(list_expiring_items))
         .route(
             "/api/items/:id",
             get(get_item).put(update_item).delete(delete_item),
@@ -83,4 +84,12 @@ async fn delete_item(
 ) -> AppResult<impl IntoResponse> {
     items::delete_item(&state.pool, auth_user.user_id, id).await?;
     Ok(Json(json!({ "message": "删除成功" })))
+}
+
+async fn list_expiring_items(
+    State(state): State<ItemsState>,
+    Extension(auth_user): Extension<AuthUser>,
+) -> AppResult<impl IntoResponse> {
+    let items = items::get_expiring_items(&state.pool, auth_user.user_id).await?;
+    Ok(Json(items))
 }

@@ -169,3 +169,43 @@ pub async fn delete_item(pool: &PgPool, user_id: Uuid, item_id: Uuid) -> AppResu
 
     Ok(())
 }
+
+// ============================================================
+// 获取临期物品（7天内过期）
+// ============================================================
+
+pub async fn get_expiring_items(pool: &PgPool, user_id: Uuid) -> AppResult<Vec<ItemWithDetails>> {
+    let item_rows = sqlx::query_as::<_, ItemWithDetailsRow>(
+        r#"SELECT DISTINCT ON (i.id)
+             i.id, i.user_id, i.name, i.category_id, i.location_id,
+             i.created_at, i.updated_at,
+             c.name AS category_name,
+             l.name AS location_name
+           FROM items i
+           JOIN categories c ON c.id = i.category_id
+           JOIN locations l ON l.id = i.location_id
+           JOIN batches b ON b.item_id = i.id
+           WHERE i.user_id = $1
+             AND b.expiry_date IS NOT NULL
+             AND b.expiry_date <= NOW() + INTERVAL '7 days'
+           ORDER BY i.id, b.expiry_date ASC"#,
+    )
+    .bind(user_id)
+    .fetch_all(pool)
+    .await?;
+
+    let mut items: Vec<ItemWithDetails> = item_rows.into_iter().map(|row| row.into()).collect();
+
+    for item in &mut items {
+        let batches = sqlx::query_as!(
+            crate::db::models::Batch,
+            r#"SELECT id, item_id, quantity, expiry_date, created_at FROM batches WHERE item_id = $1 ORDER BY expiry_date ASC"#,
+            item.id
+        )
+        .fetch_all(pool)
+        .await?;
+        item.batches = batches;
+    }
+
+    Ok(items)
+}
