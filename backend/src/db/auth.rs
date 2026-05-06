@@ -67,10 +67,10 @@ pub async fn register(
     jwt_secret: &str,
 ) -> AppResult<LoginResponse> {
     if req.username.trim().is_empty() {
-        return Err(AppError::BadRequest("用户名不能为空".to_string()));
+        return Err(AppError::BadRequest("ERR_EMPTY_USERNAME".to_string()));
     }
     if req.password.len() < 6 {
-        return Err(AppError::BadRequest("密码长度不能少于 6 位".to_string()));
+        return Err(AppError::BadRequest("ERR_PASSWORD_TOO_SHORT".to_string()));
     }
 
     let password_hash = bcrypt::hash(&req.password, bcrypt::DEFAULT_COST)
@@ -112,13 +112,15 @@ pub async fn login(
     .bind(username)
     .fetch_optional(pool)
     .await?
-    .ok_or_else(|| AppError::Unauthorized("用户名或密码错误".to_string()))?;
+    .ok_or_else(|| AppError::Unauthorized("ERR_INVALID_CREDENTIALS".to_string()))?;
 
     let valid = bcrypt::verify(password, &user.password_hash)
         .map_err(|e| AppError::Internal(format!("密码验证失败: {}", e)))?;
 
     if !valid {
-        return Err(AppError::Unauthorized("用户名或密码错误".to_string()));
+        return Err(AppError::Unauthorized(
+            "ERR_INVALID_CREDENTIALS".to_string(),
+        ));
     }
 
     let token = generate_token(&user, jwt_secret)?;

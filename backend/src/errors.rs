@@ -24,8 +24,22 @@ pub enum AppError {
     Internal(String),
 }
 
+impl AppError {
+    pub fn code(&self) -> &'static str {
+        match self {
+            AppError::NotFound(_) => "ERR_NOT_FOUND",
+            AppError::Unauthorized(_) => "ERR_UNAUTHORIZED",
+            AppError::Forbidden(_) => "ERR_FORBIDDEN",
+            AppError::BadRequest(_) => "ERR_BAD_REQUEST",
+            AppError::Database(_) => "ERR_DATABASE",
+            AppError::Internal(_) => "ERR_INTERNAL",
+        }
+    }
+}
+
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
+        let code = self.code();
         let (status, message) = match self {
             AppError::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
             AppError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, msg),
@@ -33,10 +47,7 @@ impl IntoResponse for AppError {
             AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
             AppError::Database(msg) => {
                 tracing::error!("Database error: {}", msg);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "数据库错误".to_string(),
-                )
+                (StatusCode::INTERNAL_SERVER_ERROR, "数据库错误".to_string())
             }
             AppError::Internal(msg) => {
                 tracing::error!("Internal error: {}", msg);
@@ -48,7 +59,8 @@ impl IntoResponse for AppError {
         };
 
         let body = axum::Json(json!({
-            "error": message,
+            "code": code,
+            "message": message,
         }));
 
         (status, body).into_response()
@@ -58,18 +70,12 @@ impl IntoResponse for AppError {
 impl From<sqlx::Error> for AppError {
     fn from(err: sqlx::Error) -> Self {
         match err {
-            sqlx::Error::RowNotFound => {
-                AppError::NotFound("资源不存在".to_string())
+            sqlx::Error::RowNotFound => AppError::NotFound("资源不存在".to_string()),
+            sqlx::Error::Database(ref db_err) if db_err.code().as_deref() == Some("23505") => {
+                AppError::BadRequest("ERR_USER_EXISTS".to_string())
             }
-            sqlx::Error::Database(ref db_err)
-                if db_err.code().as_deref() == Some("23505") =>
-            {
-                AppError::BadRequest("数据已存在（唯一约束冲突）".to_string())
-            }
-            sqlx::Error::Database(ref db_err)
-                if db_err.code().as_deref() == Some("23503") =>
-            {
-                AppError::BadRequest("引用的数据不存在（外键约束）".to_string())
+            sqlx::Error::Database(ref db_err) if db_err.code().as_deref() == Some("23503") => {
+                AppError::BadRequest("ERR_REFERENCE_NOT_FOUND".to_string())
             }
             _ => AppError::Database(err.to_string()),
         }

@@ -1,7 +1,7 @@
 use axum::extract::{Extension, State};
 use axum::response::IntoResponse;
-use axum::{Json, Router};
 use axum::routing::{get, post};
+use axum::{Json, Router};
 use serde::Deserialize;
 use sqlx::PgPool;
 
@@ -25,6 +25,11 @@ pub fn auth_routes(state: AuthState) -> Router {
     Router::new()
         .route("/api/auth/register", post(register))
         .route("/api/auth/login", post(login))
+        .with_state(state)
+}
+
+pub fn me_route(state: AuthState) -> Router {
+    Router::new()
         .route("/api/auth/me", get(me))
         .with_state(state)
 }

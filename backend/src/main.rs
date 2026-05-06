@@ -79,6 +79,11 @@ async fn main() -> anyhow::Result<()> {
     let protected_routes = axum::Router::new()
         // 健康检查
         .route("/api/health", get(|| async { "OK" }))
+        // 认证路由（需要认证的部分）
+        .merge(routes::auth::me_route(AuthState {
+            pool: pool.clone(),
+            jwt_secret: config.jwt_secret.clone(),
+        }))
         // 物品路由
         .merge(routes::items::items_routes(ItemsState {
             pool: pool.clone(),
