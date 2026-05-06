@@ -124,9 +124,11 @@ export default function CategoriesPage() {
                   </td>
                   <td>
                     <div className="flex gap-8">
-                      <button className="btn btn-ghost btn-sm" onClick={() => openEdit(cat)}>
-                        <Edit3 size={15} />
-                      </button>
+                      {!cat.is_system && (
+                        <button className="btn btn-ghost btn-sm" onClick={() => openEdit(cat)}>
+                          <Edit3 size={15} />
+                        </button>
+                      )}
                       {!cat.is_system && (
                         <button
                           className="btn btn-ghost btn-sm"

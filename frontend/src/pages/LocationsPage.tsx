@@ -124,9 +124,11 @@ export default function LocationsPage() {
                   </td>
                   <td>
                     <div className="flex gap-8">
-                      <button className="btn btn-ghost btn-sm" onClick={() => openEdit(loc)}>
-                        <Edit3 size={15} />
-                      </button>
+                      {!loc.is_system && (
+                        <button className="btn btn-ghost btn-sm" onClick={() => openEdit(loc)}>
+                          <Edit3 size={15} />
+                        </button>
+                      )}
                       {!loc.is_system && (
                         <button
                           className="btn btn-ghost btn-sm"
