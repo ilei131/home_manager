@@ -1,8 +1,18 @@
 import api from './client';
 import type { Item, CreateItemRequest } from '../types';
 
-export async function getItems(): Promise<Item[]> {
-  const res = await api.get<Item[]>('/items');
+export interface PaginatedItemsResponse {
+  items: Item[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
+export async function getItems(page = 1, pageSize = 10): Promise<PaginatedItemsResponse> {
+  const res = await api.get<PaginatedItemsResponse>('/items', {
+    params: { page, page_size: pageSize },
+  });
   return res.data;
 }
 

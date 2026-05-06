@@ -201,6 +201,25 @@ pub struct UpdateItemRequest {
 }
 
 // ============================================================
+// 分页
+// ============================================================
+
+#[derive(Debug, Serialize)]
+pub struct PaginatedResponse<T> {
+    pub items: Vec<T>,
+    pub total: i64,
+    pub page: i32,
+    pub page_size: i32,
+    pub total_pages: i32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PaginationQuery {
+    pub page: Option<i32>,
+    pub page_size: Option<i32>,
+}
+
+// ============================================================
 // 批次
 // ============================================================
 

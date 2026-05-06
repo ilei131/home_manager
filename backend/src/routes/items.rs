@@ -1,4 +1,4 @@
-use axum::extract::{Extension, Path, State};
+use axum::extract::{Extension, Path, Query, State};
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{Json, Router};
@@ -7,7 +7,7 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::db::items;
-use crate::db::models::{AuthUser, CreateItemRequest, UpdateItemRequest};
+use crate::db::models::{AuthUser, CreateItemRequest, PaginationQuery, UpdateItemRequest};
 use crate::errors::AppResult;
 
 #[derive(Clone)]
@@ -45,8 +45,11 @@ async fn create_item(
 async fn list_items(
     State(state): State<ItemsState>,
     Extension(auth_user): Extension<AuthUser>,
+    Query(pagination): Query<PaginationQuery>,
 ) -> AppResult<impl IntoResponse> {
-    let items = items::list_items(&state.pool, auth_user.user_id).await?;
+    let page = pagination.page.unwrap_or(1);
+    let page_size = pagination.page_size.unwrap_or(10);
+    let items = items::list_items(&state.pool, auth_user.user_id, page, page_size).await?;
     Ok(Json(items))
 }
 

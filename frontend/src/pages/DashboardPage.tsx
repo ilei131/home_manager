@@ -10,6 +10,7 @@ import * as batchesApi from '../api/batches';
 import type { Item, Category, Location, Batch, CreateItemRequest, CreateBatchRequest } from '../types';
 import Modal from '../components/Modal';
 import ConfirmDialog from '../components/ConfirmDialog';
+import Pagination from '../components/Pagination';
 import { useToast } from '../components/Toast';
 
 function formatDate(dateStr: string | null): string {
@@ -47,6 +48,11 @@ export default function DashboardPage() {
     const [filterCategory, setFilterCategory] = useState('');
     const [filterLocation, setFilterLocation] = useState('');
     const [expandedItem, setExpandedItem] = useState<string | null>(null);
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
 
     // Item modal
     const [itemModalOpen, setItemModalOpen] = useState(false);
@@ -76,14 +82,18 @@ export default function DashboardPage() {
 
     const { showToast } = useToast();
 
-    const fetchData = useCallback(async () => {
+    const fetchData = useCallback(async (page = 1, size = pageSize) => {
         try {
             const [itemsData, catsData, locsData] = await Promise.all([
-                itemsApi.getItems(),
+                itemsApi.getItems(page, size),
                 categoriesApi.getCategories(),
                 locationsApi.getLocations(),
             ]);
-            setItems(itemsData);
+            setItems(itemsData.items);
+            setTotalItems(itemsData.total);
+            setTotalPages(itemsData.total_pages);
+            setCurrentPage(page);
+            setPageSize(size);
             setCategories(catsData);
             setLocations(locsData);
         } catch {
@@ -91,13 +101,14 @@ export default function DashboardPage() {
         } finally {
             setLoading(false);
         }
-    }, [showToast]);
+    }, [showToast, pageSize]);
 
     useEffect(() => {
         fetchData();
     }, [fetchData]);
 
     const filteredItems = useMemo(() => {
+        if (!items) return [];
         return items.filter((item) => {
             const matchName = !search || item.name.toLowerCase().includes(search.toLowerCase());
             const matchCat = !filterCategory || item.category_id === Number(filterCategory);
@@ -551,6 +562,17 @@ export default function DashboardPage() {
                             );
                         })}
                     </div>
+
+                    {totalPages > 1 && (
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            totalItems={totalItems}
+                            pageSize={pageSize}
+                            onPageChange={(page) => fetchData(page, pageSize)}
+                            onPageSizeChange={(size) => fetchData(1, size)}
+                        />
+                    )}
                 </>
             ) : (
                 <div className="empty-state">

@@ -1,7 +1,7 @@
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use super::models::{ItemWithDetails, ItemWithDetailsRow};
+use super::models::{ItemWithDetails, ItemWithDetailsRow, PaginatedResponse};
 use crate::errors::{AppError, AppResult};
 
 // ============================================================
@@ -35,10 +35,28 @@ pub async fn create_item(
 }
 
 // ============================================================
-// 获取当前用户的所有物品
+// 获取当前用户的所有物品（分页）
 // ============================================================
 
-pub async fn list_items(pool: &PgPool, user_id: Uuid) -> AppResult<Vec<ItemWithDetails>> {
+pub async fn list_items(
+    pool: &PgPool,
+    user_id: Uuid,
+    page: i32,
+    page_size: i32,
+) -> AppResult<PaginatedResponse<ItemWithDetails>> {
+    let page = if page < 1 { 1 } else { page };
+    let page_size = if page_size < 1 { 10 } else if page_size > 100 { 100 } else { page_size };
+    let offset = (page - 1) * page_size;
+
+    let total: i64 = sqlx::query_scalar(
+        r#"SELECT COUNT(*) FROM items WHERE user_id = $1"#,
+    )
+    .bind(user_id)
+    .fetch_one(pool)
+    .await?;
+
+    let total_pages = (total as f64 / page_size as f64).ceil() as i32;
+
     let item_rows = sqlx::query_as::<_, ItemWithDetailsRow>(
         r#"SELECT
              i.id, i.user_id, i.name, i.category_id, i.location_id,
@@ -49,15 +67,17 @@ pub async fn list_items(pool: &PgPool, user_id: Uuid) -> AppResult<Vec<ItemWithD
            JOIN categories c ON c.id = i.category_id
            JOIN locations l ON l.id = i.location_id
            WHERE i.user_id = $1
-           ORDER BY i.created_at DESC"#,
+           ORDER BY i.created_at DESC
+           LIMIT $2 OFFSET $3"#,
     )
     .bind(user_id)
+    .bind(page_size)
+    .bind(offset)
     .fetch_all(pool)
     .await?;
 
     let mut items: Vec<ItemWithDetails> = item_rows.into_iter().map(|row| row.into()).collect();
 
-    // 查询每个物品的批次信息
     for item in &mut items {
         let batches = sqlx::query_as::<_, crate::db::models::Batch>(
             r#"SELECT id, item_id, quantity, expiry_date, created_at FROM batches WHERE item_id = $1 ORDER BY created_at DESC"#,
@@ -68,7 +88,13 @@ pub async fn list_items(pool: &PgPool, user_id: Uuid) -> AppResult<Vec<ItemWithD
         item.batches = batches;
     }
 
-    Ok(items)
+    Ok(PaginatedResponse {
+        items,
+        total,
+        page,
+        page_size,
+        total_pages,
+    })
 }
 
 // ============================================================
