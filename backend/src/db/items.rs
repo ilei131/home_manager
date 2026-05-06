@@ -59,11 +59,10 @@ pub async fn list_items(pool: &PgPool, user_id: Uuid) -> AppResult<Vec<ItemWithD
 
     // 查询每个物品的批次信息
     for item in &mut items {
-        let batches = sqlx::query_as!(
-            crate::db::models::Batch,
+        let batches = sqlx::query_as::<_, crate::db::models::Batch>(
             r#"SELECT id, item_id, quantity, expiry_date, created_at FROM batches WHERE item_id = $1 ORDER BY created_at DESC"#,
-            item.id
         )
+        .bind(item.id)
         .fetch_all(pool)
         .await?;
         item.batches = batches;
@@ -101,11 +100,10 @@ pub async fn get_item(
     let mut item: ItemWithDetails = item_row.into();
 
     // 查询批次信息
-    let batches = sqlx::query_as!(
-        crate::db::models::Batch,
+    let batches = sqlx::query_as::<_, crate::db::models::Batch>(
         r#"SELECT id, item_id, quantity, expiry_date, created_at FROM batches WHERE item_id = $1 ORDER BY created_at DESC"#,
-        item.id
     )
+    .bind(item.id)
     .fetch_all(pool)
     .await?;
     item.batches = batches;
@@ -197,11 +195,10 @@ pub async fn get_expiring_items(pool: &PgPool, user_id: Uuid) -> AppResult<Vec<I
     let mut items: Vec<ItemWithDetails> = item_rows.into_iter().map(|row| row.into()).collect();
 
     for item in &mut items {
-        let batches = sqlx::query_as!(
-            crate::db::models::Batch,
+        let batches = sqlx::query_as::<_, crate::db::models::Batch>(
             r#"SELECT id, item_id, quantity, expiry_date, created_at FROM batches WHERE item_id = $1 ORDER BY expiry_date ASC"#,
-            item.id
         )
+        .bind(item.id)
         .fetch_all(pool)
         .await?;
         item.batches = batches;

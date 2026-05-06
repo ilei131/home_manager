@@ -163,6 +163,14 @@ label {
     white-space: nowrap;
 }
 
+.btn svg,
+.empty-state .btn svg {
+    flex-shrink: 0;
+    margin-top: -1px;
+    margin-bottom: 0;
+    opacity: 1;
+}
+
 .btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -219,6 +227,13 @@ label {
     font-size: 0.8125rem;
     padding: 6px 14px;
     border-radius: var(--radius-sm);
+}
+
+.btn-sm svg,
+.empty-state .btn-sm svg {
+    margin-top: 0;
+    margin-bottom: 0;
+    opacity: 1;
 }
 
 .btn-lg {
@@ -449,7 +464,7 @@ tbody tr:hover {
     color: var(--text-secondary);
 }
 
-.empty-state svg {
+.empty-state > svg {
     margin-bottom: 16px;
     opacity: 0.4;
 }
