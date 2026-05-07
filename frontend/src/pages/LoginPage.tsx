@@ -25,7 +25,7 @@ export default function LoginPage() {
     try {
       await login(username.trim(), password);
       showToast('登录成功', 'success');
-      navigate('/dashboard');
+      navigate('/');
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : '登录失败，请检查用户名和密码';

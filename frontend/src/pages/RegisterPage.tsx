@@ -36,7 +36,7 @@ export default function RegisterPage() {
     try {
       await register(username.trim(), password);
       showToast('注册成功', 'success');
-      navigate('/dashboard');
+      navigate('/');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : '注册失败，请稍后重试';
       setError(message);

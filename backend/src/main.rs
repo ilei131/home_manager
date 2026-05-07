@@ -40,7 +40,7 @@ async fn main() -> anyhow::Result<()> {
     let config = Config::from_env();
 
     // 自动创建数据库（如果不存在）
-    create_database_if_not_exists(&config.database_url).await?;
+    let is_new_db = create_database_if_not_exists(&config.database_url).await?;
 
     tracing::info!("正在连接数据库...");
 
@@ -52,13 +52,20 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("数据库连接成功");
 
-    // 运行数据库迁移
-    tracing::info!("正在运行数据库迁移...");
-    sqlx::migrate!("./migrations").run(&pool).await?;
-    tracing::info!("数据库迁移完成");
+    // 如果是新创建的数据库，执行初始化
+    if is_new_db {
+        // 初始化数据库表结构
+        db::init_schema::init_schema(&pool).await?;
 
-    // 确保默认管理员用户存在
-    db::auth::ensure_admin(&pool, &config.admin_default_password).await?;
+        // 初始化默认数据（分类和地点）
+        db::init_data::init_default_data(&pool).await?;
+
+        // 确保默认管理员用户存在
+        db::auth::ensure_admin(&pool, &config.admin_default_password).await?;
+    } else {
+        // 如果数据库已存在，只需确保管理员用户存在（可能是新部署但数据库已存在的情况）
+        db::auth::ensure_admin(&pool, &config.admin_default_password).await?;
+    }
 
     // 配置 CORS
     let cors = CorsLayer::new()
@@ -129,7 +136,7 @@ async fn main() -> anyhow::Result<()> {
 // 自动创建数据库（如果不存在）
 // ============================================================
 
-async fn create_database_if_not_exists(database_url: &str) -> anyhow::Result<()> {
+async fn create_database_if_not_exists(database_url: &str) -> anyhow::Result<bool> {
     tracing::info!("检查数据库是否存在...");
 
     let options = PgConnectOptions::from_str(database_url)?;
@@ -153,7 +160,8 @@ async fn create_database_if_not_exists(database_url: &str) -> anyhow::Result<()>
     .fetch_one(&admin_pool)
     .await?;
 
-    if !exists {
+    let is_new = !exists;
+    if is_new {
         tracing::info!("数据库 '{}' 不存在，正在创建...", db_name);
         sqlx::query(&format!("CREATE DATABASE \"{}\"", db_name))
             .execute(&admin_pool)
@@ -165,5 +173,5 @@ async fn create_database_if_not_exists(database_url: &str) -> anyhow::Result<()>
 
     admin_pool.close().await;
 
-    Ok(())
+    Ok(is_new)
 }
