@@ -1230,14 +1230,19 @@ tbody tr:hover {
 
     .header-user {
         display: none;
-        width: 100%;
-        margin-left: 0;
+    }
+
+    .header-nav.open~.header-user {
+        display: flex;
+        width: auto;
+        margin-right: 60px;
         padding-left: 0;
         border-left: none;
-        border-top: 1px solid var(--border-color);
-        padding-top: 12px;
-        margin-top: 8px;
-        justify-content: space-between;
+        border-top: none;
+        padding-top: 0;
+        margin-top: 0;
+        margin-left: 0;
+        z-index: 100;
     }
 
     .mobile-menu-btn {
