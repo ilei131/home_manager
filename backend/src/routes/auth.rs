@@ -1,4 +1,5 @@
 use axum::extract::{Extension, State};
+use axum::middleware::from_fn_with_state;
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{Json, Router};
@@ -8,6 +9,7 @@ use sqlx::PgPool;
 use crate::db::auth::{self, get_user_by_id};
 use crate::db::models::{AuthUser, RegisterRequest, UserResponse};
 use crate::errors::AppResult;
+use crate::middleware::RateLimitState;
 
 #[derive(Clone)]
 pub struct AuthState {
@@ -21,10 +23,22 @@ pub struct LoginRequest {
     pub password: String,
 }
 
-pub fn auth_routes(state: AuthState) -> Router {
+pub fn auth_routes(state: AuthState, rate_limit_state: RateLimitState) -> Router {
     Router::new()
-        .route("/api/auth/register", post(register))
-        .route("/api/auth/login", post(login))
+        .route(
+            "/api/auth/register",
+            post(register).route_layer(from_fn_with_state(
+                rate_limit_state.clone(),
+                crate::middleware::register_rate_limit,
+            )),
+        )
+        .route(
+            "/api/auth/login",
+            post(login).route_layer(from_fn_with_state(
+                rate_limit_state,
+                crate::middleware::login_rate_limit,
+            )),
+        )
         .with_state(state)
 }
 

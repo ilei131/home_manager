@@ -17,6 +17,9 @@ pub enum AppError {
     #[error("Bad Request: {0}")]
     BadRequest(String),
 
+    #[error("Too Many Requests: {0}")]
+    TooManyRequests(String),
+
     #[error("Database Error: {0}")]
     Database(String),
 
@@ -30,7 +33,21 @@ impl AppError {
             AppError::NotFound(_) => "ERR_NOT_FOUND",
             AppError::Unauthorized(_) => "ERR_UNAUTHORIZED",
             AppError::Forbidden(_) => "ERR_FORBIDDEN",
-            AppError::BadRequest(_) => "ERR_BAD_REQUEST",
+            AppError::BadRequest(msg) => {
+                // 根据消息内容返回具体的错误码
+                match msg.as_str() {
+                    "ERR_EMPTY_USERNAME" => "ERR_EMPTY_USERNAME",
+                    "ERR_PASSWORD_TOO_SHORT" => "ERR_PASSWORD_TOO_SHORT",
+                    "ERR_USER_EXISTS" => "ERR_USER_EXISTS",
+                    "ERR_REFERENCE_NOT_FOUND" => "ERR_REFERENCE_NOT_FOUND",
+                    "ERR_CATEGORY_EXISTS" => "ERR_CATEGORY_EXISTS",
+                    "ERR_LOCATION_EXISTS" => "ERR_LOCATION_EXISTS",
+                    "数据已存在" => "ERR_USER_EXISTS",
+                    "引用的数据不存在" => "ERR_REFERENCE_NOT_FOUND",
+                    _ => "ERR_BAD_REQUEST",
+                }
+            }
+            AppError::TooManyRequests(_) => "ERR_TOO_MANY_REQUESTS",
             AppError::Database(_) => "ERR_DATABASE",
             AppError::Internal(_) => "ERR_INTERNAL",
         }
@@ -44,7 +61,22 @@ impl IntoResponse for AppError {
             AppError::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
             AppError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, msg),
             AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg),
-            AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
+            AppError::BadRequest(msg) => {
+                // 如果消息是错误码，返回友好提示
+                let friendly_msg = match msg.as_str() {
+                    "ERR_EMPTY_USERNAME" => "用户名不能为空",
+                    "ERR_PASSWORD_TOO_SHORT" => "密码长度不能少于 6 位",
+                    "ERR_USER_EXISTS" => "该用户名已被注册",
+                    "ERR_REFERENCE_NOT_FOUND" => "引用的数据不存在",
+                    "ERR_CATEGORY_EXISTS" => "分类名称已存在",
+                    "ERR_LOCATION_EXISTS" => "地点名称已存在",
+                    "数据已存在" => "该用户名已被注册",
+                    "引用的数据不存在" => "引用的数据不存在",
+                    _ => &msg,
+                };
+                (StatusCode::BAD_REQUEST, friendly_msg.to_string())
+            }
+            AppError::TooManyRequests(msg) => (StatusCode::TOO_MANY_REQUESTS, msg),
             AppError::Database(msg) => {
                 tracing::error!("Database error: {}", msg);
                 (StatusCode::INTERNAL_SERVER_ERROR, "数据库错误".to_string())
@@ -72,9 +104,11 @@ impl From<sqlx::Error> for AppError {
         match err {
             sqlx::Error::RowNotFound => AppError::NotFound("资源不存在".to_string()),
             sqlx::Error::Database(ref db_err) if db_err.code().as_deref() == Some("23505") => {
+                // 唯一约束冲突
                 AppError::BadRequest("ERR_USER_EXISTS".to_string())
             }
             sqlx::Error::Database(ref db_err) if db_err.code().as_deref() == Some("23503") => {
+                // 外键约束冲突
                 AppError::BadRequest("ERR_REFERENCE_NOT_FOUND".to_string())
             }
             _ => AppError::Database(err.to_string()),

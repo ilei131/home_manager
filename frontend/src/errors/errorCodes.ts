@@ -9,6 +9,7 @@ export const errorCodeMap: Record<string, string> = {
   ERR_UNAUTHORIZED: '未授权访问，请登录',
   ERR_FORBIDDEN: '无权限访问',
   ERR_BAD_REQUEST: '请求参数错误',
+  ERR_TOO_MANY_REQUESTS: '请求过于频繁，请稍后再试',
   ERR_DATABASE: '数据库错误',
   ERR_INTERNAL: '服务器内部错误',
 

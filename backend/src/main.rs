@@ -76,11 +76,17 @@ async fn main() -> anyhow::Result<()> {
     // 构建应用路由
     let jwt_secret = JwtSecret(config.jwt_secret.clone());
 
+    // 创建限流状态
+    let rate_limit_state = crate::middleware::RateLimitState::new();
+
     // 公开路由（不需要认证）
-    let public_routes = routes::auth::auth_routes(AuthState {
-        pool: pool.clone(),
-        jwt_secret: config.jwt_secret.clone(),
-    });
+    let public_routes = routes::auth::auth_routes(
+        AuthState {
+            pool: pool.clone(),
+            jwt_secret: config.jwt_secret.clone(),
+        },
+        rate_limit_state.clone(),
+    );
 
     // 受保护路由（需要认证）
     let protected_routes = axum::Router::new()
@@ -115,6 +121,11 @@ async fn main() -> anyhow::Result<()> {
         .route_layer(from_fn_with_state(
             jwt_secret,
             crate::middleware::auth_middleware,
+        ))
+        // 应用通用限流中间件（在认证中间件之后，以便获取用户ID）
+        .route_layer(from_fn_with_state(
+            rate_limit_state,
+            crate::middleware::general_rate_limit,
         ));
 
     let app = axum::Router::new()

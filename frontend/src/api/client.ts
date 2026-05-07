@@ -46,9 +46,9 @@ api.interceptors.response.use(
 
         if (error.response?.data) {
             const data = error.response.data as ApiErrorResponse;
-            const errorCode = data.message || data.code;
+            const errorCode = data.code || 'ERR_UNKNOWN';
             const friendlyMessage = getErrorMessage(errorCode);
-            return Promise.reject(new ApiError(data.code || 'ERR_UNKNOWN', friendlyMessage));
+            return Promise.reject(new ApiError(errorCode, friendlyMessage));
         }
 
         return Promise.reject(error);
