@@ -98,53 +98,88 @@ export default function LocationsPage() {
       </div>
 
       {locations.length > 0 ? (
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>名称</th>
-                <th>类型</th>
-                <th>创建时间</th>
-                <th style={{ width: 120 }}>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {locations.map((loc) => (
-                <tr key={loc.id}>
-                  <td style={{ fontWeight: 500 }}>{loc.name}</td>
-                  <td>
-                    {loc.is_system ? (
-                      <span className="badge badge-system">系统默认</span>
-                    ) : (
-                      <span className="badge badge-custom">自定义</span>
-                    )}
-                  </td>
-                  <td className="text-muted" style={{ fontSize: '0.875rem' }}>
-                    {new Date(loc.created_at).toLocaleDateString('zh-CN')}
-                  </td>
-                  <td>
-                    <div className="flex gap-8">
-                      {!loc.is_system && (
-                        <button className="btn btn-ghost btn-sm" onClick={() => openEdit(loc)}>
-                          <Edit3 size={15} />
-                        </button>
-                      )}
-                      {!loc.is_system && (
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          style={{ color: 'var(--color-danger)' }}
-                          onClick={() => setDeleteTarget(loc)}
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      )}
-                    </div>
-                  </td>
+        <>
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>名称</th>
+                  <th>类型</th>
+                  <th>创建时间</th>
+                  <th style={{ width: 120 }}>操作</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {locations.map((loc) => (
+                  <tr key={loc.id}>
+                    <td style={{ fontWeight: 500 }}>{loc.name}</td>
+                    <td>
+                      {loc.is_system ? (
+                        <span className="badge badge-system">系统默认</span>
+                      ) : (
+                        <span className="badge badge-custom">自定义</span>
+                      )}
+                    </td>
+                    <td className="text-muted" style={{ fontSize: '0.875rem' }}>
+                      {new Date(loc.created_at).toLocaleDateString('zh-CN')}
+                    </td>
+                    <td>
+                      <div className="flex gap-8">
+                        {!loc.is_system && (
+                          <button className="btn btn-ghost btn-sm" onClick={() => openEdit(loc)}>
+                            <Edit3 size={15} />
+                          </button>
+                        )}
+                        {!loc.is_system && (
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            style={{ color: 'var(--color-danger)' }}
+                            onClick={() => setDeleteTarget(loc)}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card List */}
+          <div className="mobile-location-list">
+            {locations.map((loc) => (
+              <div key={loc.id} className="location-card">
+                <div className="location-card-header">
+                  <span className="location-card-name">{loc.name}</span>
+                  {loc.is_system ? (
+                    <span className="badge badge-system">系统默认</span>
+                  ) : (
+                    <span className="badge badge-custom">自定义</span>
+                  )}
+                </div>
+                <div className="location-card-meta">
+                  {new Date(loc.created_at).toLocaleDateString('zh-CN')}
+                </div>
+                {!loc.is_system && (
+                  <div className="location-card-actions">
+                    <button className="btn btn-ghost btn-sm" onClick={() => openEdit(loc)}>
+                      <Edit3 size={15} />
+                    </button>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ color: 'var(--color-danger)' }}
+                      onClick={() => setDeleteTarget(loc)}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
       ) : (
         <div className="empty-state">
           <MapPin size={48} />

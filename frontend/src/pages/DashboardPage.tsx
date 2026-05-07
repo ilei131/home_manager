@@ -327,14 +327,13 @@ export default function DashboardPage() {
 
             {/* Filter Bar */}
             <div className="filter-bar">
-                <div style={{ position: 'relative', flex: 1, maxWidth: 300 }}>
-                    <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)' }} />
+                <div className="search-wrapper">
+                    <Search size={16} />
                     <input
                         type="text"
                         placeholder="搜索物品名称..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        style={{ paddingLeft: 36 }}
                     />
                 </div>
                 <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
