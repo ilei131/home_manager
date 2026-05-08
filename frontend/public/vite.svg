@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" rx="15" fill="url(#grad)"/>
+  <!-- 房子主体 -->
+  <rect x="20" y="50" width="60" height="38" rx="3" fill="white"/>
+  <!-- 屋顶 -->
+  <polygon points="50,22 15,50 85,50" fill="#FFB74D"/>
+  <!-- 门 -->
+  <rect x="38" y="68" width="24" height="20" rx="4" fill="#FF8A65"/>
+  <!-- 门把手 -->
+  <circle cx="58" cy="77" r="3" fill="#FF5722"/>
+  <!-- 中间窗户 -->
+  <rect x="40" y="57" width="20" height="10" rx="1" fill="#81D4FA"/>
+  <line x1="50" y1="57" x2="50" y2="67" stroke="white" stroke-width="1"/>
+  <line x1="40" y1="62" x2="60" y2="62" stroke="white" stroke-width="1"/>
+</svg>
