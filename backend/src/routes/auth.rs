@@ -9,7 +9,7 @@ use sqlx::PgPool;
 use crate::db::auth::{self, get_user_by_id};
 use crate::db::models::{AuthUser, RegisterRequest, UserResponse};
 use crate::errors::AppResult;
-use crate::middleware::RateLimitState;
+use crate::middleware::{require_admin, RateLimitState};
 
 #[derive(Clone)]
 pub struct AuthState {
@@ -45,6 +45,7 @@ pub fn auth_routes(state: AuthState, rate_limit_state: RateLimitState) -> Router
 pub fn me_route(state: AuthState) -> Router {
     Router::new()
         .route("/api/auth/me", get(me))
+        .route("/api/auth/users", get(get_users))
         .with_state(state)
 }
 
@@ -71,4 +72,13 @@ async fn me(
     let user = get_user_by_id(&state.pool, auth_user.user_id).await?;
     let resp = UserResponse::from(user);
     Ok(Json(resp))
+}
+
+async fn get_users(
+    State(state): State<AuthState>,
+    Extension(auth_user): Extension<AuthUser>,
+) -> AppResult<impl IntoResponse> {
+    require_admin(&auth_user)?;
+    let users = auth::get_all_users(&state.pool).await?;
+    Ok(Json(users))
 }

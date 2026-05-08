@@ -27,9 +27,10 @@ pub fn generate_token(user: &User, jwt_secret: &str) -> AppResult<String> {
     let claims = Claims {
         sub: user.id.to_string(),
         username: user.username.clone(),
-        role: serde_json::to_value(&user.role)
-            .map(|v| v.as_str().unwrap_or("user").to_string())
-            .unwrap_or_else(|_| "user".to_string()),
+        role: match user.role {
+            super::models::UserRole::Admin => "admin".to_string(),
+            super::models::UserRole::User => "user".to_string(),
+        },
         exp: expire.timestamp() as usize,
         iat: now.timestamp() as usize,
     };
@@ -145,6 +146,21 @@ pub async fn get_user_by_id(pool: &PgPool, user_id: Uuid) -> AppResult<User> {
     .fetch_one(pool)
     .await
     .map_err(|_| AppError::NotFound("用户不存在".to_string()))
+}
+
+// ============================================================
+// 获取所有用户列表（管理员权限）
+// ============================================================
+
+pub async fn get_all_users(pool: &PgPool) -> AppResult<Vec<UserResponse>> {
+    let users = sqlx::query_as::<_, User>(
+        r#"SELECT id, username, password_hash, role, created_at
+           FROM users ORDER BY created_at DESC"#,
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(users.into_iter().map(UserResponse::from).collect())
 }
 
 // ============================================================
