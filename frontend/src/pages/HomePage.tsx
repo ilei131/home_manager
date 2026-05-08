@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Package, FolderOpen, MapPin, Layers, AlertTriangle, Calendar, ChevronRight } from 'lucide-react';
+import { Package, Layers, AlertTriangle, Calendar, ChevronRight } from 'lucide-react';
 import * as statsApi from '../api/stats';
 import * as itemsApi from '../api/items';
 import type { SystemStats, Item } from '../types';
